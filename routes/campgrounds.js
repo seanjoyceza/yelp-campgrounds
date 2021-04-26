@@ -31,18 +31,27 @@ router.post('/', validateCampground, catchAsync(async (req, res, next) => {
     // if (!req.body.campground) throw new ExpressError('Invalid Campground Data', 400) //this error is passed to catchAsync, which is then passed to next at the bottom
     const campground = new Campground(req.body.campground);
     await campground.save();
+    req.flash('success', 'Successfully made a new campground!')
     res.redirect(`/campgrounds/${campground._id}`)
 }))
 
 //show single campground 
 router.get('/:id', catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id).populate('reviews'); //select by id 
+    if (!campground) {
+        req.flash('error', 'Cannot find that campground!')
+        res.redirect('/campgrounds')
+    }
     res.render('campgrounds/show', { campground })
 }))
 
 //Put/Patch campground GET
 router.get('/:id/edit', catchAsync(async (req, res) => { //it will be async becuase we need to pre populate the form with what we are editing
     const campground = await Campground.findById(req.params.id); //select by id 
+    if (!campground) {
+        req.flash('error', 'Cannot find that campground!')
+        res.redirect('/campgrounds')
+    }
     res.render('campgrounds/edit', { campground })
 }))
 
@@ -50,6 +59,7 @@ router.get('/:id/edit', catchAsync(async (req, res) => { //it will be async becu
 router.put('/:id', validateCampground, catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground }) //spread operator to give us {title: 'asds', location: 'asds'}
+    req.flash('success', 'Successfully updated campground!')
     res.redirect(`/campgrounds/${campground._id}`)
 }))
 
@@ -57,6 +67,7 @@ router.put('/:id', validateCampground, catchAsync(async (req, res) => {
 router.delete('/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findByIdAndDelete(id)
+    req.flash('success', 'Successfully deleted campground!')
     res.redirect('/campgrounds');
 }))
 
