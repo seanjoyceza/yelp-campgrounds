@@ -7,7 +7,6 @@ const path = require('path')
 const ExpressError = require('./utils/ExpressError')
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
-const session = require('express-session');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const passport = require('passport');
@@ -20,13 +19,15 @@ const campgroundRoutes = require('./routes/campgrounds')
 const reviewRoutes = require('./routes/reviews')
 const userRoutes = require('./routes/users')
 
-const MongoStore = require('connect-mongo')(session);
-
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 
 
 
 // const dbUrl = process.env.DB_URL
-mongoose.connect('mongodb://localhost:27017/yelp-camp', {
+const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp'
+
+mongoose.connect(dbUrl, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
@@ -49,10 +50,27 @@ app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public'))) //serve static file 
 
+const secret = process.env.SECRET || 'thisshouldbeabettersecret'
+
+// const store = new MongoStore({
+//     url: dbUrl,
+//     secret: 'thisshouldbeabettersecret',
+//     touchAfter: 24 * 60 * 60
+// });
+
+// store.on("error", function (e) {
+//     console.log("Store Error", e)
+// })
+
+
 //session + cookie
 const sessionConfig = {
+    store: MongoStore.create({
+        mongoUrl: dbUrl,
+        touchAfter: 24 * 60 * 60
+    }),
     name: 'session',
-    secret: 'thisshouldbeabettersecret',
+    secret,
     resave: false,
     saveUninitialized: true,
     cookie: {
